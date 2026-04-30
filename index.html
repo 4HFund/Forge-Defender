@@ -1,0 +1,2125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Forge Defender | The Foundery Church</title>
+
+  <style>
+    :root {
+      --bg: #0d1015;
+      --steel: #1d2630;
+      --steel-light: #34404c;
+      --orange: #e77722;
+      --gold: #ffcc66;
+      --cream: #fff2d5;
+      --red: #ff4b4b;
+      --green: #63ff9c;
+      --blue: #73d7ff;
+      --purple: #bd7cff;
+      --shadow: rgba(0,0,0,.55);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #202833 0%, #10141a 45%, #07090d 100%);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--cream);
+      touch-action: none;
+      user-select: none;
+    }
+
+    #gameWrap {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(231,119,34,.16), transparent 28%),
+        radial-gradient(circle at 10% 15%, rgba(255,204,102,.08), transparent 18%),
+        linear-gradient(135deg, #080a0f, #171d25 55%, #0c0f14);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      background:
+        radial-gradient(circle at center, rgba(231,119,34,.22), rgba(5,7,10,.92) 58%),
+        linear-gradient(135deg, rgba(17,21,28,.88), rgba(4,5,8,.96));
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .panel {
+      width: min(760px, 96vw);
+      max-height: 92vh;
+      overflow-y: auto;
+      border: 1px solid rgba(255,204,102,.22);
+      border-radius: 28px;
+      padding: clamp(20px, 4vw, 38px);
+      background:
+        linear-gradient(145deg, rgba(29,38,48,.94), rgba(10,13,18,.96)),
+        radial-gradient(circle at top, rgba(231,119,34,.16), transparent 45%);
+      box-shadow:
+        0 30px 90px rgba(0,0,0,.65),
+        inset 0 0 40px rgba(255,204,102,.04);
+      text-align: center;
+      position: relative;
+    }
+
+    .brandTag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 13px;
+      border-radius: 999px;
+      color: var(--gold);
+      border: 1px solid rgba(255,204,102,.25);
+      background: rgba(255,204,102,.06);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(42px, 9vw, 86px);
+      line-height: .88;
+      font-weight: 1000;
+      letter-spacing: -.06em;
+      text-transform: uppercase;
+      color: #fff5db;
+      text-shadow:
+        0 0 16px rgba(255,204,102,.45),
+        0 0 42px rgba(231,119,34,.35),
+        0 8px 0 rgba(0,0,0,.2);
+    }
+
+    .subtitle {
+      margin: 18px auto 26px;
+      max-width: 620px;
+      color: rgba(255,242,213,.82);
+      font-size: clamp(16px, 2.8vw, 20px);
+      line-height: 1.45;
+    }
+
+    .buttonRow {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      border-radius: 16px;
+      padding: 14px 20px;
+      font-weight: 900;
+      letter-spacing: .02em;
+      color: #1a0d04;
+      background: linear-gradient(180deg, #ffd77b, #e77722);
+      box-shadow:
+        0 12px 28px rgba(231,119,34,.35),
+        inset 0 2px 0 rgba(255,255,255,.35);
+      transition: transform .15s ease, filter .15s ease, opacity .15s ease;
+      font-size: 15px;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+    }
+
+    button:active {
+      transform: scale(.97);
+    }
+
+    button.secondary {
+      color: var(--cream);
+      background: linear-gradient(180deg, #34404c, #161c24);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 12px 28px rgba(0,0,0,.26);
+    }
+
+    button.danger {
+      color: white;
+      background: linear-gradient(180deg, #ff6b6b, #8d1e1e);
+    }
+
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .smallText {
+      margin-top: 18px;
+      color: rgba(255,242,213,.62);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    #hud {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    .topHud {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: start;
+      gap: 10px;
+    }
+
+    .hudCard {
+      padding: 10px 12px;
+      background: rgba(9,11,15,.58);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      min-width: 0;
+    }
+
+    .hudLabel {
+      color: rgba(255,242,213,.64);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin-bottom: 5px;
+    }
+
+    .hudValue {
+      font-size: clamp(18px, 4vw, 28px);
+      font-weight: 1000;
+      letter-spacing: -.03em;
+      color: #fff4d8;
+      text-shadow: 0 0 12px rgba(255,204,102,.3);
+      white-space: nowrap;
+    }
+
+    .centerHud {
+      text-align: center;
+    }
+
+    .rightHud {
+      text-align: right;
+    }
+
+    .bar {
+      width: 100%;
+      height: 10px;
+      background: rgba(255,255,255,.09);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .barFill {
+      height: 100%;
+      width: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ff5252, #ffcc66, #63ff9c);
+      box-shadow: 0 0 16px rgba(255,204,102,.45);
+      transition: width .15s ease;
+    }
+
+    .blessingFill {
+      background: linear-gradient(90deg, #73d7ff, #bd7cff, #ffcc66);
+    }
+
+    #burstButton {
+      position: absolute;
+      right: 16px;
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      z-index: 4;
+      width: 92px;
+      height: 92px;
+      border-radius: 999px;
+      pointer-events: auto;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 8px;
+      font-size: 11px;
+      text-align: center;
+      color: #1a0d04;
+    }
+
+    #burstButton strong {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    #missionBox {
+      position: absolute;
+      left: 12px;
+      bottom: calc(14px + env(safe-area-inset-bottom));
+      max-width: min(380px, calc(100vw - 130px));
+      padding: 11px 13px;
+      pointer-events: none;
+    }
+
+    .missionText {
+      font-size: 13px;
+      line-height: 1.3;
+      color: rgba(255,242,213,.86);
+      font-weight: 700;
+    }
+
+    .upgradeGrid,
+    .customGrid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .choiceCard {
+      text-align: left;
+      padding: 18px;
+      min-height: 150px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,204,102,.18);
+      background:
+        radial-gradient(circle at top left, rgba(231,119,34,.17), transparent 42%),
+        linear-gradient(145deg, rgba(52,64,76,.76), rgba(15,18,24,.92));
+      cursor: pointer;
+      transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    }
+
+    .choiceCard:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255,204,102,.55);
+    }
+
+    .choiceCard.locked {
+      opacity: .4;
+      cursor: not-allowed;
+      filter: grayscale(.5);
+    }
+
+    .choiceTitle {
+      font-weight: 1000;
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: #ffe2a0;
+    }
+
+    .choiceDesc {
+      font-size: 13px;
+      line-height: 1.35;
+      color: rgba(255,242,213,.72);
+    }
+
+    .selected {
+      border-color: var(--gold) !important;
+      box-shadow: 0 0 0 2px rgba(255,204,102,.18), 0 0 28px rgba(231,119,34,.22);
+    }
+
+    .statsGrid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .statBox {
+      padding: 15px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+    }
+
+    .statNum {
+      font-size: 28px;
+      font-weight: 1000;
+      color: var(--gold);
+    }
+
+    .statName {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: rgba(255,242,213,.6);
+      margin-top: 3px;
+    }
+
+    .challengeCard {
+      margin: 22px auto;
+      padding: 18px;
+      border-radius: 22px;
+      background:
+        linear-gradient(145deg, rgba(255,204,102,.14), rgba(231,119,34,.08)),
+        rgba(255,255,255,.05);
+      border: 1px solid rgba(255,204,102,.24);
+      max-width: 540px;
+    }
+
+    .challengeCard h3 {
+      margin: 0 0 8px;
+      color: #ffe2a0;
+    }
+
+    .challengeCard p {
+      margin: 0;
+      color: rgba(255,242,213,.82);
+      line-height: 1.45;
+    }
+
+    .tabRow {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .tabButton {
+      padding: 10px 13px;
+      font-size: 12px;
+      border-radius: 999px;
+    }
+
+    @media (max-width: 700px) {
+      .topHud {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .centerHud {
+        grid-column: 1 / -1;
+        order: 3;
+      }
+
+      .rightHud {
+        text-align: left;
+      }
+
+      .upgradeGrid,
+      .customGrid,
+      .statsGrid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        border-radius: 22px;
+      }
+
+      #burstButton {
+        display: flex;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="gameWrap">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+
+  <div id="hud" class="hidden">
+    <div class="topHud">
+      <div class="hudCard">
+        <div class="hudLabel">Score</div>
+        <div id="scoreText" class="hudValue">0</div>
+      </div>
+
+      <div class="hudCard centerHud">
+        <div class="hudLabel">Forge Health</div>
+        <div class="bar"><div id="healthFill" class="barFill"></div></div>
+      </div>
+
+      <div class="hudCard rightHud">
+        <div class="hudLabel">Wave</div>
+        <div id="waveText" class="hudValue">1</div>
+      </div>
+    </div>
+
+    <div id="missionBox" class="hudCard">
+      <div class="hudLabel">Live Mission</div>
+      <div id="missionText" class="missionText">Break 10 negative items</div>
+    </div>
+
+    <button id="burstButton">
+      <strong>BURST</strong>
+      <span id="burstMini">0%</span>
+    </button>
+  </div>
+
+  <div id="startScreen" class="overlay">
+    <div class="panel">
+      <div class="brandTag">The Foundery Church</div>
+      <h1 class="title">Forge Defender</h1>
+      <p class="subtitle">
+        Protect the glowing forge. Break the negative forces. Catch blessings.
+        Build your flame. Survive as long as you can.
+      </p>
+
+      <div class="buttonRow">
+        <button id="playBtn">Play Game</button>
+        <button id="customizeBtn" class="secondary">Customize</button>
+        <button id="howBtn" class="secondary">How to Play</button>
+      </div>
+
+      <p class="smallText">
+        Desktop: click items and press Space for Blessing Burst.
+        Mobile: tap items and use the Burst button.
+      </p>
+    </div>
+  </div>
+
+  <div id="howScreen" class="overlay hidden">
+    <div class="panel">
+      <div class="brandTag">How to Play</div>
+      <h2 class="title" style="font-size: clamp(34px, 7vw, 62px);">Defend the Flame</h2>
+      <p class="subtitle">
+        Tap dark enemies before they hit the center forge. Tap glowing blessings to fill your Blessing Meter.
+        When the meter is full, use Blessing Burst to clear enemies, heal the forge, and score big.
+      </p>
+
+      <div class="challengeCard">
+        <h3>Power-Ups</h3>
+        <p>
+          Grace Shield blocks damage. Prayer Pulse slows enemies. Hope Burst clears nearby threats.
+          Community Chain doubles points. Forge Fire burns enemies near the forge.
+        </p>
+      </div>
+
+      <div class="buttonRow">
+        <button id="howBackBtn">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="customScreen" class="overlay hidden">
+    <div class="panel">
+      <div class="brandTag">Customization</div>
+      <h2 class="title" style="font-size: clamp(34px, 7vw, 62px);">Build Your Forge</h2>
+      <p class="subtitle">
+        Unlock more styles by setting higher scores and surviving more waves.
+      </p>
+
+      <div class="tabRow">
+        <button class="tabButton" data-tab="forge">Forge</button>
+        <button class="tabButton secondary" data-tab="flame">Flame</button>
+        <button class="tabButton secondary" data-tab="helper">Helper</button>
+        <button class="tabButton secondary" data-tab="trail">Trail</button>
+      </div>
+
+      <div id="customGrid" class="customGrid"></div>
+
+      <div class="buttonRow">
+        <button id="customBackBtn">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="upgradeScreen" class="overlay hidden">
+    <div class="panel">
+      <div class="brandTag">Forge Upgrade</div>
+      <h2 class="title" style="font-size: clamp(34px, 7vw, 60px);">Choose Your Boost</h2>
+      <p class="subtitle">Every third wave, the forge grows stronger. Choose one upgrade.</p>
+      <div id="upgradeGrid" class="upgradeGrid"></div>
+    </div>
+  </div>
+
+  <div id="endScreen" class="overlay hidden">
+    <div class="panel">
+      <div class="brandTag">Run Complete</div>
+      <h2 class="title" style="font-size: clamp(38px, 8vw, 72px);">Forge Cooled</h2>
+
+      <div class="statsGrid">
+        <div class="statBox">
+          <div id="finalScore" class="statNum">0</div>
+          <div class="statName">Final Score</div>
+        </div>
+        <div class="statBox">
+          <div id="finalWave" class="statNum">1</div>
+          <div class="statName">Wave Reached</div>
+        </div>
+        <div class="statBox">
+          <div id="bestScore" class="statNum">0</div>
+          <div class="statName">Personal Best</div>
+        </div>
+      </div>
+
+      <div class="challengeCard">
+        <h3>Real-Life Challenge Card</h3>
+        <p id="realChallenge">Send one encouraging message to someone who may need it today.</p>
+      </div>
+
+      <div class="buttonRow">
+        <button id="againBtn">Play Again</button>
+        <button id="shareBtn" class="secondary">Share</button>
+        <button id="menuBtn" class="secondary">Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      Forge Defender
+      Single-file canvas arcade game for The Foundery Church.
+      No external engine. Built with small classes for readability.
+    */
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const UI = {
+      hud: document.getElementById("hud"),
+      scoreText: document.getElementById("scoreText"),
+      waveText: document.getElementById("waveText"),
+      healthFill: document.getElementById("healthFill"),
+      missionText: document.getElementById("missionText"),
+      burstButton: document.getElementById("burstButton"),
+      burstMini: document.getElementById("burstMini"),
+
+      startScreen: document.getElementById("startScreen"),
+      howScreen: document.getElementById("howScreen"),
+      customScreen: document.getElementById("customScreen"),
+      upgradeScreen: document.getElementById("upgradeScreen"),
+      endScreen: document.getElementById("endScreen"),
+
+      playBtn: document.getElementById("playBtn"),
+      customizeBtn: document.getElementById("customizeBtn"),
+      howBtn: document.getElementById("howBtn"),
+      howBackBtn: document.getElementById("howBackBtn"),
+      customBackBtn: document.getElementById("customBackBtn"),
+      upgradeGrid: document.getElementById("upgradeGrid"),
+      customGrid: document.getElementById("customGrid"),
+
+      finalScore: document.getElementById("finalScore"),
+      finalWave: document.getElementById("finalWave"),
+      bestScore: document.getElementById("bestScore"),
+      realChallenge: document.getElementById("realChallenge"),
+      againBtn: document.getElementById("againBtn"),
+      shareBtn: document.getElementById("shareBtn"),
+      menuBtn: document.getElementById("menuBtn")
+    };
+
+    const STORE_KEY = "forgeDefenderSave_v1";
+
+    const defaultSave = {
+      bestScore: 0,
+      bestWave: 1,
+      selected: {
+        forge: "classic",
+        flame: "orange",
+        helper: "spark",
+        trail: "embers"
+      },
+      unlocked: {
+        forge: ["classic"],
+        flame: ["orange"],
+        helper: ["spark"],
+        trail: ["embers"]
+      }
+    };
+
+    let save = loadSave();
+
+    function loadSave() {
+      try {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (!raw) return structuredClone(defaultSave);
+        const parsed = JSON.parse(raw);
+        return mergeDeep(structuredClone(defaultSave), parsed);
+      } catch {
+        return structuredClone(defaultSave);
+      }
+    }
+
+    function saveGame() {
+      localStorage.setItem(STORE_KEY, JSON.stringify(save));
+    }
+
+    function mergeDeep(target, source) {
+      for (const key in source) {
+        if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])) {
+          target[key] = mergeDeep(target[key] || {}, source[key]);
+        } else {
+          target[key] = source[key];
+        }
+      }
+      return target;
+    }
+
+    function showScreen(screen) {
+      [UI.startScreen, UI.howScreen, UI.customScreen, UI.upgradeScreen, UI.endScreen].forEach(el => el.classList.add("hidden"));
+      if (screen) screen.classList.remove("hidden");
+    }
+
+    function rand(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function dist(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function pick(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function resizeCanvas() {
+      const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+      canvas.width = Math.floor(innerWidth * dpr);
+      canvas.height = Math.floor(innerHeight * dpr);
+      canvas.style.width = innerWidth + "px";
+      canvas.style.height = innerHeight + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    const COLORS = {
+      orange: ["#ffcc66", "#e77722", "#ff4b2b"],
+      blue: ["#d8f6ff", "#73d7ff", "#2584ff"],
+      purple: ["#f1d7ff", "#bd7cff", "#6a35ff"],
+      whitegold: ["#ffffff", "#ffe9a6", "#ffcc66"],
+      green: ["#e5fff1", "#63ff9c", "#18aa61"]
+    };
+
+    const CUSTOM_OPTIONS = {
+      forge: [
+        { id: "classic", name: "Classic Forge", desc: "The original Foundery flame.", req: "Unlocked" },
+        { id: "anvil", name: "Anvil Forge", desc: "Heavier steel frame.", req: "Score 1,500", score: 1500 },
+        { id: "cathedral", name: "Cathedral Forge", desc: "Stained-glow sacred steel.", req: "Wave 8", wave: 8 },
+        { id: "valley", name: "Valley Forge", desc: "Inspired by Ohio Valley steel.", req: "Score 5,000", score: 5000 }
+      ],
+      flame: [
+        { id: "orange", name: "Foundery Orange", desc: "Warm forge fire.", req: "Unlocked" },
+        { id: "blue", name: "Blue Revival", desc: "Cool holy flame.", req: "Wave 5", wave: 5 },
+        { id: "purple", name: "Royal Glow", desc: "A bold violet flame.", req: "Score 3,000", score: 3000 },
+        { id: "whitegold", name: "White Gold", desc: "Bright victory flame.", req: "Wave 12", wave: 12 },
+        { id: "green", name: "New Growth", desc: "Life and restoration.", req: "Score 7,500", score: 7500 }
+      ],
+      helper: [
+        { id: "spark", name: "Tiny Spark", desc: "A small auto-helper.", req: "Unlocked" },
+        { id: "emberbot", name: "Ember Bot", desc: "Fast and focused.", req: "Score 2,000", score: 2000 },
+        { id: "dove", name: "Dove Light", desc: "Graceful helper glow.", req: "Wave 10", wave: 10 },
+        { id: "hammer", name: "Forge Hammer", desc: "Heavy-hit helper.", req: "Score 6,000", score: 6000 }
+      ],
+      trail: [
+        { id: "embers", name: "Embers", desc: "Classic orange sparks.", req: "Unlocked" },
+        { id: "stars", name: "Stars", desc: "Tiny golden star trails.", req: "Score 2,500", score: 2500 },
+        { id: "smoke", name: "Smoke", desc: "Soft cinematic smoke.", req: "Wave 7", wave: 7 },
+        { id: "scripture", name: "Scripture Glints", desc: "Cream-colored light shards.", req: "Score 8,000", score: 8000 }
+      ]
+    };
+
+    const REAL_CHALLENGES = [
+      "Send one encouraging message to someone who may need it today.",
+      "Pray for one first responder, teacher, veteran, or neighbor by name.",
+      "Do one small act of service without asking for credit.",
+      "Invite someone to coffee, church, or a simple conversation this week.",
+      "Thank a volunteer, leader, or helper who usually goes unnoticed.",
+      "Share one good thing God has done in your life recently."
+    ];
+
+    class Particle {
+      constructor(x, y, options = {}) {
+        this.x = x;
+        this.y = y;
+        this.vx = options.vx ?? rand(-2, 2);
+        this.vy = options.vy ?? rand(-2, 2);
+        this.life = options.life ?? rand(25, 60);
+        this.maxLife = this.life;
+        this.size = options.size ?? rand(2, 6);
+        this.color = options.color ?? "#ffcc66";
+        this.glow = options.glow ?? 12;
+        this.gravity = options.gravity ?? 0;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity;
+        this.vx *= .985;
+        this.vy *= .985;
+        this.life--;
+      }
+
+      draw(ctx) {
+        const a = Math.max(0, this.life / this.maxLife);
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.shadowBlur = this.glow;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * a, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    class FloatingText {
+      constructor(x, y, text, color = "#ffcc66") {
+        this.x = x;
+        this.y = y;
+        this.text = text;
+        this.color = color;
+        this.life = 55;
+        this.maxLife = 55;
+      }
+
+      update() {
+        this.y -= .65;
+        this.life--;
+      }
+
+      draw(ctx) {
+        const a = this.life / this.maxLife;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.font = "900 18px system-ui";
+        ctx.textAlign = "center";
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = this.color;
+        ctx.fillText(this.text, this.x, this.y);
+        ctx.restore();
+      }
+    }
+
+    class Entity {
+      constructor(game, x, y, type) {
+        this.game = game;
+        this.x = x;
+        this.y = y;
+        this.type = type;
+        this.dead = false;
+        this.age = 0;
+        this.radius = 18;
+        this.hp = 1;
+        this.maxHp = 1;
+        this.speed = 1;
+        this.value = 10;
+      }
+
+      update() {
+        this.age++;
+      }
+
+      draw(ctx) {}
+
+      isHit(px, py) {
+        return Math.hypot(px - this.x, py - this.y) <= this.radius + 12;
+      }
+    }
+
+    class Enemy extends Entity {
+      constructor(game, x, y, kind = "regular") {
+        super(game, x, y, "enemy");
+        this.kind = kind;
+
+        const waveScale = 1 + game.wave * .035;
+
+        this.radius = 18;
+        this.speed = rand(.75, 1.35) * waveScale;
+        this.hp = 1;
+        this.maxHp = 1;
+        this.damage = 10;
+        this.value = 20;
+        this.color = "#ff5b4d";
+        this.label = "NEG";
+
+        if (kind === "fear") {
+          this.radius = 34;
+          this.speed = .75 * waveScale;
+          this.hp = 7 + Math.floor(game.wave / 5);
+          this.maxHp = this.hp;
+          this.damage = 18;
+          this.value = 350;
+          this.color = "#935cff";
+          this.label = "FEAR";
+        }
+
+        if (kind === "gossip") {
+          this.radius = 28;
+          this.speed = 1.05 * waveScale;
+          this.hp = 4;
+          this.maxHp = 4;
+          this.damage = 12;
+          this.value = 260;
+          this.color = "#ff6fcf";
+          this.label = "BUZZ";
+        }
+
+        if (kind === "burnout") {
+          this.radius = 38;
+          this.speed = .42 * waveScale;
+          this.hp = 10 + Math.floor(game.wave / 4);
+          this.maxHp = this.hp;
+          this.damage = 32;
+          this.value = 460;
+          this.color = "#8b5a3c";
+          this.label = "BURN";
+        }
+
+        if (kind === "doubt") {
+          this.radius = 31;
+          this.speed = .95 * waveScale;
+          this.hp = 6;
+          this.maxHp = 6;
+          this.damage = 16;
+          this.value = 330;
+          this.color = "#7ee0ff";
+          this.label = "?";
+          this.curveSeed = rand(0, 999);
+        }
+
+        if (kind === "mini") {
+          this.radius = 13;
+          this.speed = rand(1.25, 1.75) * waveScale;
+          this.hp = 1;
+          this.maxHp = 1;
+          this.damage = 5;
+          this.value = 25;
+          this.color = "#ff9adf";
+          this.label = "!";
+        }
+      }
+
+      update() {
+        super.update();
+
+        const target = this.game.forge;
+        let dx = target.x - this.x;
+        let dy = target.y - this.y;
+        const d = Math.hypot(dx, dy) || 1;
+        dx /= d;
+        dy /= d;
+
+        let slow = this.game.effects.prayerPulse > 0 ? .45 : 1;
+
+        if (this.kind === "doubt") {
+          const wave = Math.sin(this.age * .065 + this.curveSeed) * 1.15;
+          const px = -dy;
+          const py = dx;
+          this.x += (dx * this.speed + px * wave) * slow;
+          this.y += (dy * this.speed + py * wave) * slow;
+        } else {
+          this.x += dx * this.speed * slow;
+          this.y += dy * this.speed * slow;
+        }
+
+        if (this.game.effects.forgeFire > 0 && d < this.game.forge.radius + 120) {
+          if (this.age % 12 === 0) {
+            this.takeDamage(1, false);
+            this.game.spawnParticles(this.x, this.y, 5, "#ff8a2b");
+          }
+        }
+
+        if (d < this.radius + this.game.forge.radius * .74) {
+          this.dead = true;
+          this.game.enemyHitForge(this);
+        }
+      }
+
+      takeDamage(amount = 1, fromTap = true) {
+        this.hp -= amount;
+        this.game.spawnParticles(this.x, this.y, 8, this.color);
+
+        if (this.hp <= 0) {
+          this.dead = true;
+          this.onDefeat(fromTap);
+        }
+      }
+
+      onDefeat(fromTap) {
+        let points = this.value;
+        if (this.game.effects.communityChain > 0) points *= 2;
+
+        this.game.addScore(points);
+        this.game.stats.broken++;
+        this.game.missionProgress("break", 1);
+
+        if (["fear", "gossip", "burnout", "doubt"].includes(this.kind)) {
+          this.game.stats.bosses++;
+          this.game.missionProgress("boss", 1);
+          this.game.shake = 12;
+          this.game.floatingTexts.push(new FloatingText(this.x, this.y, "MINI BOSS DOWN +" + points, "#ffcc66"));
+        } else {
+          this.game.floatingTexts.push(new FloatingText(this.x, this.y, "+" + points, "#ffcc66"));
+        }
+
+        if (this.kind === "gossip") {
+          for (let i = 0; i < 5; i++) {
+            const mini = new Enemy(this.game, this.x + rand(-20, 20), this.y + rand(-20, 20), "mini");
+            this.game.entities.push(mini);
+          }
+        }
+
+        this.game.spawnParticles(this.x, this.y, this.kind === "mini" ? 12 : 22, this.color);
+      }
+
+      draw(ctx) {
+        const hpPct = this.hp / this.maxHp;
+        ctx.save();
+
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.age * .015);
+
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.color;
+
+        const grad = ctx.createRadialGradient(0, 0, 2, 0, 0, this.radius);
+        grad.addColorStop(0, "rgba(255,255,255,.9)");
+        grad.addColorStop(.25, this.color);
+        grad.addColorStop(1, "rgba(40,10,10,.85)");
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+
+        if (this.kind === "burnout") {
+          roundedRock(ctx, this.radius);
+        } else if (this.kind === "doubt") {
+          spiralBlob(ctx, this.radius);
+        } else if (this.kind === "fear") {
+          cloudBlob(ctx, this.radius);
+        } else {
+          jaggedCircle(ctx, this.radius, this.kind === "mini" ? 7 : 10);
+        }
+
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255,255,255,.35)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.rotate(-this.age * .015);
+        ctx.fillStyle = "#fff2d5";
+        ctx.font = `900 ${Math.max(10, this.radius * .38)}px system-ui`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(this.label, 0, 1);
+
+        if (this.maxHp > 1) {
+          ctx.fillStyle = "rgba(0,0,0,.45)";
+          ctx.fillRect(-this.radius, -this.radius - 12, this.radius * 2, 5);
+          ctx.fillStyle = "#ffcc66";
+          ctx.fillRect(-this.radius, -this.radius - 12, this.radius * 2 * hpPct, 5);
+        }
+
+        ctx.restore();
+      }
+    }
+
+    class Blessing extends Entity {
+      constructor(game, x, y) {
+        super(game, x, y, "blessing");
+        this.radius = 17;
+        this.life = 520;
+        this.angle = rand(0, Math.PI * 2);
+        this.value = 60;
+      }
+
+      update() {
+        super.update();
+        this.angle += .05;
+        this.y += Math.sin(this.age * .035) * .25;
+        this.life--;
+        if (this.life <= 0) this.dead = true;
+      }
+
+      collect() {
+        this.dead = true;
+        this.game.stats.blessings++;
+        this.game.missionProgress("blessing", 1);
+        this.game.blessingMeter = clamp(this.game.blessingMeter + 22, 0, this.game.maxBlessingMeter);
+        this.game.addScore(this.value);
+        this.game.floatingTexts.push(new FloatingText(this.x, this.y, "BLESSING +" + this.value, "#73d7ff"));
+        this.game.spawnParticles(this.x, this.y, 28, "#73d7ff");
+
+        if (Math.random() < .27) {
+          this.game.spawnPowerUp(this.x, this.y);
+        }
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        ctx.shadowBlur = 24;
+        ctx.shadowColor = "#73d7ff";
+        ctx.fillStyle = "#d8f6ff";
+
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const a = i * Math.PI / 4;
+          const r = i % 2 === 0 ? this.radius : this.radius * .45;
+          ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#ffcc66";
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius * .35, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    class PowerUp extends Entity {
+      constructor(game, x, y, powerType) {
+        super(game, x, y, "powerup");
+        this.powerType = powerType;
+        this.radius = 19;
+        this.life = 600;
+
+        const data = PowerUp.DATA[powerType];
+        this.color = data.color;
+        this.icon = data.icon;
+        this.name = data.name;
+      }
+
+      update() {
+        super.update();
+        this.life--;
+        this.y += Math.sin(this.age * .05) * .2;
+        if (this.life <= 0) this.dead = true;
+      }
+
+      collect() {
+        this.dead = true;
+        this.game.activatePowerUp(this.powerType);
+        this.game.spawnParticles(this.x, this.y, 34, this.color);
+        this.game.floatingTexts.push(new FloatingText(this.x, this.y, this.name, this.color));
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(Math.sin(this.age * .03) * .25);
+        ctx.shadowBlur = 26;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.roundRect(-this.radius, -this.radius, this.radius * 2, this.radius * 2, 8);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255,255,255,.55)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = "#10141a";
+        ctx.font = "900 18px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(this.icon, 0, 1);
+        ctx.restore();
+      }
+    }
+
+    PowerUp.DATA = {
+      shield: { name: "Grace Shield", color: "#63ff9c", icon: "S" },
+      pulse: { name: "Prayer Pulse", color: "#73d7ff", icon: "P" },
+      hope: { name: "Hope Burst", color: "#ffcc66", icon: "H" },
+      chain: { name: "Community Chain", color: "#bd7cff", icon: "X2" },
+      fire: { name: "Forge Fire", color: "#ff7b2a", icon: "F" }
+    };
+
+    class AutoHelper {
+      constructor(game) {
+        this.game = game;
+        this.angle = 0;
+        this.cooldown = 0;
+      }
+
+      update() {
+        this.angle += .035;
+        if (this.cooldown > 0) this.cooldown--;
+
+        if (this.cooldown <= 0) {
+          const enemies = this.game.entities.filter(e => e.type === "enemy" && !e.dead);
+          if (enemies.length) {
+            enemies.sort((a, b) => dist(a, this.game.forge) - dist(b, this.game.forge));
+            const target = enemies[0];
+            if (dist(target, this.game.forge) < 260) {
+              target.takeDamage(1, false);
+              this.game.spawnParticles(target.x, target.y, 12, "#ffcc66");
+              this.cooldown = Math.max(28, 70 - this.game.upgrades.autoSpark * 8);
+            }
+          }
+        }
+      }
+
+      draw(ctx) {
+        const r = this.game.forge.radius + 64;
+        const x = this.game.forge.x + Math.cos(this.angle) * r;
+        const y = this.game.forge.y + Math.sin(this.angle) * r;
+
+        const helper = save.selected.helper;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.shadowBlur = 18;
+        ctx.shadowColor = "#ffcc66";
+        ctx.fillStyle = "#ffcc66";
+
+        if (helper === "dove") {
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 17, 10, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(12, -4, 7, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (helper === "hammer") {
+          ctx.fillRect(-4, -16, 8, 32);
+          ctx.fillRect(-15, -20, 30, 10);
+        } else if (helper === "emberbot") {
+          ctx.roundRect(-13, -13, 26, 26, 7);
+          ctx.fill();
+          ctx.fillStyle = "#10141a";
+          ctx.beginPath();
+          ctx.arc(-5, -2, 2, 0, Math.PI * 2);
+          ctx.arc(5, -2, 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.beginPath();
+          ctx.arc(0, 0, 11, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    class Forge {
+      constructor(game) {
+        this.game = game;
+        this.x = innerWidth / 2;
+        this.y = innerHeight / 2;
+        this.radius = Math.min(innerWidth, innerHeight) * .08 + 24;
+        this.pulse = 0;
+      }
+
+      update() {
+        this.x = innerWidth / 2;
+        this.y = innerHeight / 2;
+        this.radius = Math.min(innerWidth, innerHeight) * .08 + 24;
+        this.pulse += .04;
+      }
+
+      draw(ctx) {
+        const flameColors = COLORS[save.selected.flame] || COLORS.orange;
+        const pulse = Math.sin(this.pulse) * 6;
+        const r = this.radius + pulse;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        ctx.shadowBlur = 55;
+        ctx.shadowColor = flameColors[1];
+
+        const glow = ctx.createRadialGradient(0, 0, 2, 0, 0, r * 2.2);
+        glow.addColorStop(0, flameColors[0]);
+        glow.addColorStop(.25, flameColors[1]);
+        glow.addColorStop(.55, "rgba(231,119,34,.20)");
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        this.drawBase(ctx, r);
+        this.drawFlame(ctx, r, flameColors);
+
+        if (this.game.shield > 0) {
+          ctx.strokeStyle = "rgba(99,255,156,.85)";
+          ctx.lineWidth = 4;
+          ctx.shadowBlur = 28;
+          ctx.shadowColor = "#63ff9c";
+          ctx.beginPath();
+          ctx.arc(0, 0, r * 1.45, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      drawBase(ctx, r) {
+        const style = save.selected.forge;
+        ctx.save();
+
+        if (style === "cathedral") {
+          ctx.fillStyle = "#26313d";
+          ctx.strokeStyle = "rgba(255,204,102,.35)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(0, -r * 1.45);
+          ctx.lineTo(r * 1.25, -r * .1);
+          ctx.lineTo(r * .85, r * 1.1);
+          ctx.lineTo(-r * .85, r * 1.1);
+          ctx.lineTo(-r * 1.25, -r * .1);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        } else if (style === "anvil") {
+          ctx.fillStyle = "#2f3a45";
+          ctx.strokeStyle = "rgba(255,255,255,.18)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.roundRect(-r * 1.25, r * .45, r * 2.5, r * .5, 12);
+          ctx.roundRect(-r * .72, -r * .35, r * 1.44, r * 1.1, 16);
+          ctx.fill();
+          ctx.stroke();
+        } else if (style === "valley") {
+          ctx.fillStyle = "#252f39";
+          ctx.strokeStyle = "rgba(255,204,102,.45)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(0, 0, r * 1.1, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.strokeStyle = "rgba(231,119,34,.45)";
+          for (let i = 0; i < 8; i++) {
+            const a = i * Math.PI / 4;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a) * r * .8, Math.sin(a) * r * .8);
+            ctx.lineTo(Math.cos(a) * r * 1.35, Math.sin(a) * r * 1.35);
+            ctx.stroke();
+          }
+        } else {
+          ctx.fillStyle = "#27313c";
+          ctx.strokeStyle = "rgba(255,255,255,.16)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.roundRect(-r * 1.05, -r * .65, r * 2.1, r * 1.55, 22);
+          ctx.fill();
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      drawFlame(ctx, r, colors) {
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+
+        for (let i = 0; i < 3; i++) {
+          const scale = 1 - i * .22;
+          ctx.fillStyle = colors[i] || colors[0];
+          ctx.shadowBlur = 25;
+          ctx.shadowColor = colors[i] || colors[0];
+
+          ctx.beginPath();
+          ctx.moveTo(0, -r * 1.08 * scale);
+          ctx.bezierCurveTo(r * .65 * scale, -r * .45 * scale, r * .4 * scale, r * .55 * scale, 0, r * .8 * scale);
+          ctx.bezierCurveTo(-r * .6 * scale, r * .28 * scale, -r * .62 * scale, -r * .43 * scale, 0, -r * 1.08 * scale);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    class Game {
+      constructor() {
+        this.forge = new Forge(this);
+        this.helper = new AutoHelper(this);
+        this.reset();
+      }
+
+      reset() {
+        this.running = false;
+        this.paused = false;
+        this.gameOver = false;
+
+        this.score = 0;
+        this.wave = 1;
+        this.waveTimer = 0;
+        this.waveDuration = 1450;
+
+        this.maxHealth = 100;
+        this.health = this.maxHealth;
+        this.blessingMeter = 0;
+        this.maxBlessingMeter = 100;
+        this.burstPower = 1;
+
+        this.entities = [];
+        this.particles = [];
+        this.floatingTexts = [];
+        this.bgSparks = [];
+
+        this.spawnTimer = 0;
+        this.blessingTimer = 200;
+        this.powerTimer = 480;
+        this.shake = 0;
+        this.shield = 0;
+
+        this.effects = {
+          prayerPulse: 0,
+          communityChain: 0,
+          forgeFire: 0
+        };
+
+        this.upgrades = {
+          blessingSpawns: 0,
+          powerLength: 0,
+          autoSpark: 0,
+          startShield: 0
+        };
+
+        this.stats = {
+          broken: 0,
+          blessings: 0,
+          bosses: 0,
+          bursts: 0,
+          untouchedTime: 0,
+          hitThisRun: false
+        };
+
+        this.mission = this.randomMission();
+
+        for (let i = 0; i < 90; i++) {
+          this.bgSparks.push({
+            x: rand(0, innerWidth),
+            y: rand(0, innerHeight),
+            vx: rand(-.1, .1),
+            vy: rand(-.5, -.1),
+            a: rand(.08, .35),
+            s: rand(1, 3)
+          });
+        }
+
+        this.updateHUD();
+      }
+
+      start() {
+        this.reset();
+        this.running = true;
+        this.paused = false;
+        this.gameOver = false;
+        UI.hud.classList.remove("hidden");
+        showScreen(null);
+
+        if (this.upgrades.startShield > 0) this.shield = 1;
+      }
+
+      update() {
+        this.forge.update();
+
+        this.updateBackgroundSparks();
+
+        if (!this.running || this.paused || this.gameOver) {
+          this.updateVisualsOnly();
+          return;
+        }
+
+        this.waveTimer++;
+
+        this.stats.untouchedTime++;
+        this.missionProgress("untouched", 1 / 60);
+
+        if (this.waveTimer >= this.waveDuration) {
+          this.nextWave();
+        }
+
+        for (const key in this.effects) {
+          if (this.effects[key] > 0) this.effects[key]--;
+        }
+
+        if (this.shake > 0) this.shake *= .88;
+
+        this.spawnTimer--;
+        this.blessingTimer--;
+        this.powerTimer--;
+
+        if (this.spawnTimer <= 0) {
+          this.spawnEnemy();
+          const base = Math.max(22, 82 - this.wave * 4);
+          this.spawnTimer = rand(base * .55, base * 1.1);
+        }
+
+        const blessingRate = Math.max(80, 245 - this.upgrades.blessingSpawns * 35);
+        if (this.blessingTimer <= 0) {
+          this.spawnBlessing();
+          this.blessingTimer = rand(blessingRate, blessingRate + 160);
+        }
+
+        if (this.powerTimer <= 0) {
+          this.spawnPowerUp();
+          this.powerTimer = rand(520, 850);
+        }
+
+        this.entities.forEach(e => e.update());
+        this.entities = this.entities.filter(e => !e.dead);
+
+        this.particles.forEach(p => p.update());
+        this.particles = this.particles.filter(p => p.life > 0);
+
+        this.floatingTexts.forEach(t => t.update());
+        this.floatingTexts = this.floatingTexts.filter(t => t.life > 0);
+
+        if (this.upgrades.autoSpark > 0) this.helper.update();
+
+        this.updateHUD();
+      }
+
+      updateVisualsOnly() {
+        this.particles.forEach(p => p.update());
+        this.particles = this.particles.filter(p => p.life > 0);
+
+        this.floatingTexts.forEach(t => t.update());
+        this.floatingTexts = this.floatingTexts.filter(t => t.life > 0);
+      }
+
+      draw() {
+        ctx.clearRect(0, 0, innerWidth, innerHeight);
+        this.drawBackground(ctx);
+
+        ctx.save();
+
+        if (this.shake > .4) {
+          ctx.translate(rand(-this.shake, this.shake), rand(-this.shake, this.shake));
+        }
+
+        this.forge.draw(ctx);
+
+        if (this.upgrades.autoSpark > 0) this.helper.draw(ctx);
+
+        this.entities.forEach(e => e.draw(ctx));
+        this.particles.forEach(p => p.draw(ctx));
+        this.floatingTexts.forEach(t => t.draw(ctx));
+
+        ctx.restore();
+
+        this.drawVignette(ctx);
+      }
+
+      drawBackground(ctx) {
+        const grd = ctx.createRadialGradient(innerWidth / 2, innerHeight / 2, 0, innerWidth / 2, innerHeight / 2, Math.max(innerWidth, innerHeight) * .7);
+        grd.addColorStop(0, "#202832");
+        grd.addColorStop(.5, "#11161d");
+        grd.addColorStop(1, "#06070b");
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, innerWidth, innerHeight);
+
+        ctx.save();
+        ctx.globalAlpha = .16;
+        ctx.strokeStyle = "#fff2d5";
+        ctx.lineWidth = 1;
+
+        const grid = 70;
+        for (let x = -grid; x < innerWidth + grid; x += grid) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x + innerHeight * .25, innerHeight);
+          ctx.stroke();
+        }
+
+        for (let y = 0; y < innerHeight + grid; y += grid) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(innerWidth, y);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+
+        for (const s of this.bgSparks) {
+          ctx.save();
+          ctx.globalAlpha = s.a;
+          ctx.fillStyle = "#ffcc66";
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = "#e77722";
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.s, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        if (this.effects.prayerPulse > 0) {
+          ctx.save();
+          ctx.globalAlpha = .12;
+          ctx.fillStyle = "#73d7ff";
+          ctx.fillRect(0, 0, innerWidth, innerHeight);
+          ctx.restore();
+        }
+
+        if (this.effects.communityChain > 0) {
+          ctx.save();
+          ctx.globalAlpha = .1 + Math.sin(Date.now() * .012) * .04;
+          ctx.fillStyle = "#bd7cff";
+          ctx.fillRect(0, 0, innerWidth, innerHeight);
+          ctx.restore();
+        }
+      }
+
+      drawVignette(ctx) {
+        const v = ctx.createRadialGradient(innerWidth / 2, innerHeight / 2, Math.min(innerWidth, innerHeight) * .25, innerWidth / 2, innerHeight / 2, Math.max(innerWidth, innerHeight) * .72);
+        v.addColorStop(0, "rgba(0,0,0,0)");
+        v.addColorStop(1, "rgba(0,0,0,.58)");
+        ctx.fillStyle = v;
+        ctx.fillRect(0, 0, innerWidth, innerHeight);
+      }
+
+      updateBackgroundSparks() {
+        for (const s of this.bgSparks) {
+          s.x += s.vx;
+          s.y += s.vy;
+          if (s.y < -10) {
+            s.y = innerHeight + 10;
+            s.x = rand(0, innerWidth);
+          }
+          if (s.x < -10) s.x = innerWidth + 10;
+          if (s.x > innerWidth + 10) s.x = -10;
+        }
+      }
+
+      spawnEnemy(kind = "regular") {
+        let x, y;
+        const edge = Math.floor(rand(0, 4));
+        const pad = 60;
+
+        if (edge === 0) { x = rand(0, innerWidth); y = -pad; }
+        if (edge === 1) { x = innerWidth + pad; y = rand(0, innerHeight); }
+        if (edge === 2) { x = rand(0, innerWidth); y = innerHeight + pad; }
+        if (edge === 3) { x = -pad; y = rand(0, innerHeight); }
+
+        this.entities.push(new Enemy(this, x, y, kind));
+      }
+
+      spawnBoss() {
+        const bossTypes = ["fear", "gossip", "burnout", "doubt"];
+        this.spawnEnemy(pick(bossTypes));
+        this.floatingTexts.push(new FloatingText(innerWidth / 2, 115, "MINI BOSS APPROACHING", "#ffcc66"));
+        this.shake = 10;
+      }
+
+      spawnBlessing() {
+        const margin = 60;
+        const x = rand(margin, innerWidth - margin);
+        const y = rand(margin + 60, innerHeight - margin);
+        if (Math.hypot(x - this.forge.x, y - this.forge.y) < this.forge.radius + 90) return;
+        this.entities.push(new Blessing(this, x, y));
+      }
+
+      spawnPowerUp(x = null, y = null) {
+        const types = Object.keys(PowerUp.DATA);
+        if (x === null || y === null) {
+          x = rand(50, innerWidth - 50);
+          y = rand(90, innerHeight - 70);
+        }
+        this.entities.push(new PowerUp(this, x, y, pick(types)));
+      }
+
+      activatePowerUp(type) {
+        const bonus = this.upgrades.powerLength * 90;
+
+        if (type === "shield") {
+          this.shield = 1;
+        }
+
+        if (type === "pulse") {
+          this.effects.prayerPulse = 300 + bonus;
+        }
+
+        if (type === "hope") {
+          const range = 170;
+          let cleared = 0;
+          for (const e of this.entities) {
+            if (e.type === "enemy" && dist(e, {x:this.forge.x, y:this.forge.y}) < range) {
+              e.takeDamage(999, false);
+              cleared++;
+            }
+          }
+          this.addScore(cleared * 40);
+          this.spawnRing(this.forge.x, this.forge.y, "#ffcc66", 60);
+        }
+
+        if (type === "chain") {
+          this.effects.communityChain = 420 + bonus;
+        }
+
+        if (type === "fire") {
+          this.effects.forgeFire = 420 + bonus;
+          this.spawnRing(this.forge.x, this.forge.y, "#ff7b2a", 80);
+        }
+      }
+
+      enemyHitForge(enemy) {
+        this.stats.hitThisRun = true;
+        this.stats.untouchedTime = 0;
+
+        if (this.shield > 0) {
+          this.shield = 0;
+          this.floatingTexts.push(new FloatingText(this.forge.x, this.forge.y - 75, "GRACE SHIELD", "#63ff9c"));
+          this.spawnRing(this.forge.x, this.forge.y, "#63ff9c", 30);
+          return;
+        }
+
+        this.health -= enemy.damage;
+        this.shake = Math.max(this.shake, 14);
+        this.spawnParticles(this.forge.x, this.forge.y, 26, "#ff4b4b");
+        this.floatingTexts.push(new FloatingText(this.forge.x, this.forge.y - 65, "-" + enemy.damage, "#ff4b4b"));
+
+        if (this.health <= 0) {
+          this.endGame();
+        }
+      }
+
+      addScore(amount) {
+        this.score += Math.floor(amount);
+      }
+
+      useBlessingBurst() {
+        if (!this.running || this.paused || this.gameOver) return;
+        if (this.blessingMeter < this.maxBlessingMeter) return;
+
+        this.blessingMeter = 0;
+        this.stats.bursts++;
+        this.missionProgress("burst", 1);
+
+        const power = this.burstPower;
+        const clearDamage = 999;
+        let cleared = 0;
+
+        for (const e of this.entities) {
+          if (e.type === "enemy") {
+            e.takeDamage(clearDamage, false);
+            cleared++;
+          }
+        }
+
+        this.health = clamp(this.health + 18 + power * 8, 0, this.maxHealth);
+        this.addScore(300 + cleared * 75 * power);
+        this.spawnRing(this.forge.x, this.forge.y, "#ffcc66", 140);
+        this.spawnParticles(this.forge.x, this.forge.y, 95, "#ffcc66");
+        this.shake = 18;
+        this.floatingTexts.push(new FloatingText(this.forge.x, this.forge.y - 100, "BLESSING BURST", "#ffcc66"));
+      }
+
+      nextWave() {
+        this.wave++;
+        this.waveTimer = 0;
+        this.waveDuration = Math.max(950, this.waveDuration - 18);
+
+        this.addScore(125 * this.wave);
+        this.health = clamp(this.health + 4, 0, this.maxHealth);
+
+        this.floatingTexts.push(new FloatingText(innerWidth / 2, 98, "WAVE " + this.wave, "#ffcc66"));
+        this.spawnParticles(this.forge.x, this.forge.y, 32, "#ffcc66");
+
+        if (this.wave % 5 === 0) this.spawnBoss();
+
+        if (this.wave % 3 === 0) {
+          this.openUpgradeScreen();
+        }
+
+        if (this.upgrades.startShield > 0) {
+          this.shield = 1;
+        }
+      }
+
+      openUpgradeScreen() {
+        this.paused = true;
+        UI.upgradeGrid.innerHTML = "";
+
+        const upgrades = [
+          {
+            name: "Bigger Flame Health",
+            desc: "Increase maximum forge health and heal immediately.",
+            apply: () => {
+              this.maxHealth += 22;
+              this.health = clamp(this.health + 35, 0, this.maxHealth);
+            }
+          },
+          {
+            name: "Stronger Blessing Burst",
+            desc: "Blessing Burst gives more points and healing.",
+            apply: () => this.burstPower++
+          },
+          {
+            name: "More Blessing Spawns",
+            desc: "Blessing items appear more often.",
+            apply: () => this.upgrades.blessingSpawns++
+          },
+          {
+            name: "Longer Power-Ups",
+            desc: "Power-up effects last longer.",
+            apply: () => this.upgrades.powerLength++
+          },
+          {
+            name: "Auto Spark Helper",
+            desc: "A small helper damages nearby threats automatically.",
+            apply: () => this.upgrades.autoSpark++
+          },
+          {
+            name: "Start Wave With Shield",
+            desc: "Begin future waves with Grace Shield active.",
+            apply: () => {
+              this.upgrades.startShield++;
+              this.shield = 1;
+            }
+          }
+        ];
+
+        const chosen = [];
+        while (chosen.length < 3) {
+          const u = pick(upgrades);
+          if (!chosen.includes(u)) chosen.push(u);
+        }
+
+        chosen.forEach(u => {
+          const card = document.createElement("div");
+          card.className = "choiceCard";
+          card.innerHTML = `
+            <div class="choiceTitle">${u.name}</div>
+            <div class="choiceDesc">${u.desc}</div>
+          `;
+          card.addEventListener("click", () => {
+            u.apply();
+            this.paused = false;
+            showScreen(null);
+            this.floatingTexts.push(new FloatingText(innerWidth / 2, 125, u.name, "#ffcc66"));
+          });
+          UI.upgradeGrid.appendChild(card);
+        });
+
+        showScreen(UI.upgradeScreen);
+      }
+
+      handleTap(x, y) {
+        if (!this.running || this.paused || this.gameOver) return;
+
+        const sorted = [...this.entities].sort((a, b) => {
+          const priority = { powerup: 0, blessing: 1, enemy: 2 };
+          return priority[a.type] - priority[b.type];
+        });
+
+        for (const e of sorted) {
+          if (e.isHit(x, y)) {
+            if (e.type === "enemy") {
+              e.takeDamage(1, true);
+            } else if (e.type === "blessing") {
+              e.collect();
+            } else if (e.type === "powerup") {
+              e.collect();
+            }
+            return;
+          }
+        }
+      }
+
+      spawnParticles(x, y, count, color) {
+        for (let i = 0; i < count; i++) {
+          let particleColor = color;
+
+          if (save.selected.trail === "stars") particleColor = pick(["#fff2d5", "#ffcc66", "#ffffff"]);
+          if (save.selected.trail === "smoke") particleColor = pick(["#88909a", "#b1b7bf", "#fff2d5"]);
+          if (save.selected.trail === "scripture") particleColor = pick(["#fff2d5", "#ffe9a6", "#ffffff"]);
+
+          this.particles.push(new Particle(x, y, {
+            vx: rand(-4, 4),
+            vy: rand(-4, 4),
+            life: rand(25, 75),
+            size: rand(2, 6),
+            color: particleColor,
+            glow: rand(8, 22),
+            gravity: save.selected.trail === "smoke" ? -.01 : .02
+          }));
+        }
+      }
+
+      spawnRing(x, y, color, count = 70) {
+        for (let i = 0; i < count; i++) {
+          const a = i / count * Math.PI * 2;
+          const sp = rand(3, 7);
+          this.particles.push(new Particle(x, y, {
+            vx: Math.cos(a) * sp,
+            vy: Math.sin(a) * sp,
+            life: rand(38, 75),
+            size: rand(2, 5),
+            color,
+            glow: 18
+          }));
+        }
+      }
+
+      randomMission() {
+        const missions = [
+          { type: "break", goal: 10, progress: 0, text: "Break 10 negative items" },
+          { type: "blessing", goal: 5, progress: 0, text: "Collect 5 blessings" },
+          { type: "untouched", goal: 20, progress: 0, text: "Survive 20 seconds untouched" },
+          { type: "burst", goal: 1, progress: 0, text: "Use Blessing Burst" },
+          { type: "boss", goal: 1, progress: 0, text: "Defeat a mini boss" }
+        ];
+        return pick(missions);
+      }
+
+      missionProgress(type, amount) {
+        if (!this.mission || this.mission.type !== type) return;
+
+        this.mission.progress += amount;
+
+        if (this.mission.progress >= this.mission.goal) {
+          this.addScore(500);
+          this.blessingMeter = clamp(this.blessingMeter + 35, 0, this.maxBlessingMeter);
+          this.floatingTexts.push(new FloatingText(innerWidth / 2, 155, "MISSION COMPLETE +500", "#63ff9c"));
+          this.spawnParticles(this.forge.x, this.forge.y, 40, "#63ff9c");
+          this.mission = this.randomMission();
+        }
+      }
+
+      updateHUD() {
+        UI.scoreText.textContent = Math.floor(this.score).toLocaleString();
+        UI.waveText.textContent = this.wave;
+        UI.healthFill.style.width = clamp(this.health / this.maxHealth * 100, 0, 100) + "%";
+
+        const burstPercent = Math.floor(clamp(this.blessingMeter / this.maxBlessingMeter * 100, 0, 100));
+        UI.burstMini.textContent = burstPercent + "%";
+        UI.burstButton.disabled = burstPercent < 100;
+
+        if (this.mission) {
+          const progress = Math.min(this.mission.progress, this.mission.goal);
+          UI.missionText.textContent = `${this.mission.text} — ${Math.floor(progress)}/${this.mission.goal}`;
+        }
+      }
+
+      endGame() {
+        this.running = false;
+        this.gameOver = true;
+        UI.hud.classList.add("hidden");
+
+        save.bestScore = Math.max(save.bestScore, Math.floor(this.score));
+        save.bestWave = Math.max(save.bestWave, this.wave);
+        unlockProgress();
+        saveGame();
+
+        UI.finalScore.textContent = Math.floor(this.score).toLocaleString();
+        UI.finalWave.textContent = this.wave;
+        UI.bestScore.textContent = save.bestScore.toLocaleString();
+        UI.realChallenge.textContent = pick(REAL_CHALLENGES);
+
+        showScreen(UI.endScreen);
+      }
+    }
+
+    function unlockProgress() {
+      for (const category in CUSTOM_OPTIONS) {
+        for (const item of CUSTOM_OPTIONS[category]) {
+          const byScore = item.score ? save.bestScore >= item.score : false;
+          const byWave = item.wave ? save.bestWave >= item.wave : false;
+          const free = !item.score && !item.wave;
+
+          if ((free || byScore || byWave) && !save.unlocked[category].includes(item.id)) {
+            save.unlocked[category].push(item.id);
+          }
+        }
+      }
+    }
+
+    function renderCustomization(tab = "forge") {
+      unlockProgress();
+      UI.customGrid.innerHTML = "";
+
+      document.querySelectorAll(".tabButton").forEach(btn => {
+        btn.classList.toggle("secondary", btn.dataset.tab !== tab);
+      });
+
+      CUSTOM_OPTIONS[tab].forEach(item => {
+        const unlocked = save.unlocked[tab].includes(item.id);
+        const selected = save.selected[tab] === item.id;
+
+        const card = document.createElement("div");
+        card.className = "choiceCard" + (selected ? " selected" : "") + (!unlocked ? " locked" : "");
+        card.innerHTML = `
+          <div class="choiceTitle">${item.name}</div>
+          <div class="choiceDesc">${item.desc}</div>
+          <div class="choiceDesc" style="margin-top:10px;color:${unlocked ? "#63ff9c" : "#ffcc66"};">
+            ${unlocked ? "Unlocked" : "Unlock: " + item.req}
+          </div>
+        `;
+
+        card.addEventListener("click", () => {
+          if (!unlocked) return;
+          save.selected[tab] = item.id;
+          saveGame();
+          renderCustomization(tab);
+        });
+
+        UI.customGrid.appendChild(card);
+      });
+    }
+
+    function jaggedCircle(ctx, radius, points) {
+      for (let i = 0; i <= points; i++) {
+        const a = i / points * Math.PI * 2;
+        const r = radius * rand(.82, 1.06);
+        const x = Math.cos(a) * r;
+        const y = Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+    }
+
+    function roundedRock(ctx, radius) {
+      ctx.moveTo(-radius * .75, -radius * .45);
+      ctx.quadraticCurveTo(-radius * .25, -radius * 1.05, radius * .45, -radius * .72);
+      ctx.quadraticCurveTo(radius * 1.05, -radius * .35, radius * .82, radius * .36);
+      ctx.quadraticCurveTo(radius * .55, radius * 1.1, -radius * .35, radius * .88);
+      ctx.quadraticCurveTo(-radius * 1.12, radius * .55, -radius * .75, -radius * .45);
+    }
+
+    function cloudBlob(ctx, radius) {
+      ctx.arc(-radius * .35, 0, radius * .6, 0, Math.PI * 2);
+      ctx.arc(radius * .25, -radius * .1, radius * .75, 0, Math.PI * 2);
+      ctx.arc(radius * .55, radius * .2, radius * .45, 0, Math.PI * 2);
+    }
+
+    function spiralBlob(ctx, radius) {
+      for (let a = 0; a < Math.PI * 5; a += .24) {
+        const r = radius * a / (Math.PI * 5);
+        const x = Math.cos(a) * r;
+        const y = Math.sin(a) * r;
+        if (a === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.lineWidth = radius * .35;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#7ee0ff";
+      ctx.stroke();
+    }
+
+    // Browser support helper for older Safari.
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+      CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+        r = Math.min(r, w / 2, h / 2);
+        this.beginPath();
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r);
+        this.closePath();
+        return this;
+      };
+    }
+
+    const game = new Game();
+
+    function gameLoop() {
+      game.update();
+      game.draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    requestAnimationFrame(gameLoop);
+
+    function pointerToCanvas(e) {
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches ? e.touches[0] : e;
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      };
+    }
+
+    canvas.addEventListener("pointerdown", e => {
+      const p = pointerToCanvas(e);
+      game.handleTap(p.x, p.y);
+    });
+
+    window.addEventListener("keydown", e => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        game.useBlessingBurst();
+      }
+    });
+
+    UI.burstButton.addEventListener("click", () => game.useBlessingBurst());
+
+    UI.playBtn.addEventListener("click", () => game.start());
+    UI.againBtn.addEventListener("click", () => game.start());
+
+    UI.customizeBtn.addEventListener("click", () => {
+      renderCustomization("forge");
+      showScreen(UI.customScreen);
+    });
+
+    UI.howBtn.addEventListener("click", () => showScreen(UI.howScreen));
+    UI.howBackBtn.addEventListener("click", () => showScreen(UI.startScreen));
+    UI.customBackBtn.addEventListener("click", () => showScreen(UI.startScreen));
+    UI.menuBtn.addEventListener("click", () => showScreen(UI.startScreen));
+
+    document.querySelectorAll(".tabButton").forEach(btn => {
+      btn.addEventListener("click", () => renderCustomization(btn.dataset.tab));
+    });
+
+    UI.shareBtn.addEventListener("click", async () => {
+      const text = `I scored ${Math.floor(game.score).toLocaleString()} in Forge Defender and reached Wave ${game.wave}!`;
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "Forge Defender",
+            text
+          });
+        } catch {}
+      } else {
+        try {
+          await navigator.clipboard.writeText(text);
+          UI.shareBtn.textContent = "Copied!";
+          setTimeout(() => UI.shareBtn.textContent = "Share", 1200);
+        } catch {
+          alert(text);
+        }
+      }
+    });
+
+    // Initial unlock refresh.
+    unlockProgress();
+    saveGame();
+  </script>
+</body>
+</html>
