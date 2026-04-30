@@ -72,7 +72,7 @@
     }
 
     .panel {
-      width: min(760px, 96vw);
+      width: min(820px, 96vw);
       max-height: 92vh;
       overflow-y: auto;
       border: 1px solid rgba(255,204,102,.22);
@@ -120,7 +120,7 @@
 
     .subtitle {
       margin: 18px auto 26px;
-      max-width: 620px;
+      max-width: 640px;
       color: rgba(255,242,213,.82);
       font-size: clamp(16px, 2.8vw, 20px);
       line-height: 1.45;
@@ -166,15 +166,27 @@
       box-shadow: 0 12px 28px rgba(0,0,0,.26);
     }
 
-    button.danger {
-      color: white;
-      background: linear-gradient(180deg, #ff6b6b, #8d1e1e);
-    }
-
     button:disabled {
       opacity: .45;
       cursor: not-allowed;
       transform: none;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,204,102,.25);
+      background: rgba(0,0,0,.35);
+      color: #fff2d5;
+      font-weight: 800;
+      margin-bottom: 12px;
+      outline: none;
+      font-size: 16px;
+    }
+
+    input::placeholder {
+      color: rgba(255,242,213,.45);
     }
 
     .smallText {
@@ -255,10 +267,6 @@
       background: linear-gradient(90deg, #ff5252, #ffcc66, #63ff9c);
       box-shadow: 0 0 16px rgba(255,204,102,.45);
       transition: width .15s ease;
-    }
-
-    .blessingFill {
-      background: linear-gradient(90deg, #73d7ff, #bd7cff, #ffcc66);
     }
 
     #burstButton {
@@ -387,7 +395,7 @@
         linear-gradient(145deg, rgba(255,204,102,.14), rgba(231,119,34,.08)),
         rgba(255,255,255,.05);
       border: 1px solid rgba(255,204,102,.24);
-      max-width: 540px;
+      max-width: 620px;
     }
 
     .challengeCard h3 {
@@ -399,6 +407,24 @@
       margin: 0;
       color: rgba(255,242,213,.82);
       line-height: 1.45;
+    }
+
+    .leaderRow {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+
+    .leaderName {
+      font-weight: 900;
+    }
+
+    .leaderWave {
+      color: rgba(255,242,213,.58);
+      font-size: 12px;
+      margin-left: 6px;
     }
 
     .tabRow {
@@ -493,6 +519,7 @@
         <button id="playBtn">Play Game</button>
         <button id="customizeBtn" class="secondary">Customize</button>
         <button id="howBtn" class="secondary">How to Play</button>
+        <button id="leaderboardBtn" class="secondary">Leaderboard</button>
       </div>
 
       <p class="smallText">
@@ -521,6 +548,26 @@
 
       <div class="buttonRow">
         <button id="howBackBtn">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="leaderboardScreen" class="overlay hidden">
+    <div class="panel">
+      <div class="brandTag">Online Leaderboard</div>
+      <h2 class="title" style="font-size: clamp(34px, 7vw, 62px);">Top Defenders</h2>
+      <p class="subtitle">The highest Forge Defender scores submitted online.</p>
+
+      <div class="challengeCard">
+        <h3>Top Forge Defenders</h3>
+        <div id="mainLeaderboardList" style="text-align:left;">
+          <p class="smallText">Loading leaderboard...</p>
+        </div>
+      </div>
+
+      <div class="buttonRow">
+        <button id="leaderboardBackBtn">Back</button>
+        <button id="leaderboardRefreshBtn" class="secondary">Refresh</button>
       </div>
     </div>
   </div>
@@ -578,6 +625,20 @@
       </div>
 
       <div class="challengeCard">
+        <h3>Submit Your Score</h3>
+        <input id="playerNameInput" maxlength="18" placeholder="Enter your name" />
+        <button id="submitScoreBtn">Submit Score</button>
+        <p id="submitScoreStatus" class="smallText"></p>
+      </div>
+
+      <div class="challengeCard">
+        <h3>Top Forge Defenders</h3>
+        <div id="leaderboardList" style="text-align:left;">
+          <p class="smallText">Loading leaderboard...</p>
+        </div>
+      </div>
+
+      <div class="challengeCard">
         <h3>Real-Life Challenge Card</h3>
         <p id="realChallenge">Send one encouraging message to someone who may need it today.</p>
       </div>
@@ -590,13 +651,71 @@
     </div>
   </div>
 
-  <script>
-    /*
-      Forge Defender
-      Single-file canvas arcade game for The Foundery Church.
-      No external engine. Built with small classes for readability.
-    */
+  <!-- Firebase Leaderboard Connection -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      query,
+      orderBy,
+      limit,
+      getDocs,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZSbC7rmeiwQCXd3CAx8QXnQLDpX85Q4c",
+      authDomain: "forged-champions.firebaseapp.com",
+      projectId: "forged-champions",
+      storageBucket: "forged-champions.firebasestorage.app",
+      messagingSenderId: "715729196804",
+      appId: "1:715729196804:web:087013f9cf55a3db05a251",
+      measurementId: "G-E2ZWVRQHKD"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+
+    window.ForgeLeaderboard = {
+      async submitScore(name, score, wave) {
+        const cleanName = String(name || "Anonymous")
+          .replace(/[<>]/g, "")
+          .trim()
+          .slice(0, 18) || "Anonymous";
+
+        const cleanScore = Math.max(0, Math.floor(Number(score) || 0));
+        const cleanWave = Math.max(1, Math.floor(Number(wave) || 1));
+
+        await addDoc(collection(db, "forgeDefenderScores"), {
+          name: cleanName,
+          score: cleanScore,
+          wave: cleanWave,
+          createdAt: serverTimestamp()
+        });
+      },
+
+      async getTopScores() {
+        const q = query(
+          collection(db, "forgeDefenderScores"),
+          orderBy("score", "desc"),
+          limit(10)
+        );
+
+        const snapshot = await getDocs(q);
+
+        return snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+      }
+    };
+  </script>
+
+  <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
@@ -614,12 +733,17 @@
       customScreen: document.getElementById("customScreen"),
       upgradeScreen: document.getElementById("upgradeScreen"),
       endScreen: document.getElementById("endScreen"),
+      leaderboardScreen: document.getElementById("leaderboardScreen"),
 
       playBtn: document.getElementById("playBtn"),
       customizeBtn: document.getElementById("customizeBtn"),
       howBtn: document.getElementById("howBtn"),
+      leaderboardBtn: document.getElementById("leaderboardBtn"),
       howBackBtn: document.getElementById("howBackBtn"),
       customBackBtn: document.getElementById("customBackBtn"),
+      leaderboardBackBtn: document.getElementById("leaderboardBackBtn"),
+      leaderboardRefreshBtn: document.getElementById("leaderboardRefreshBtn"),
+
       upgradeGrid: document.getElementById("upgradeGrid"),
       customGrid: document.getElementById("customGrid"),
 
@@ -627,12 +751,19 @@
       finalWave: document.getElementById("finalWave"),
       bestScore: document.getElementById("bestScore"),
       realChallenge: document.getElementById("realChallenge"),
+
+      playerNameInput: document.getElementById("playerNameInput"),
+      submitScoreBtn: document.getElementById("submitScoreBtn"),
+      submitScoreStatus: document.getElementById("submitScoreStatus"),
+      leaderboardList: document.getElementById("leaderboardList"),
+      mainLeaderboardList: document.getElementById("mainLeaderboardList"),
+
       againBtn: document.getElementById("againBtn"),
       shareBtn: document.getElementById("shareBtn"),
       menuBtn: document.getElementById("menuBtn")
     };
 
-    const STORE_KEY = "forgeDefenderSave_v1";
+    const STORE_KEY = "forgeDefenderSave_v2";
 
     const defaultSave = {
       bestScore: 0,
@@ -680,7 +811,15 @@
     }
 
     function showScreen(screen) {
-      [UI.startScreen, UI.howScreen, UI.customScreen, UI.upgradeScreen, UI.endScreen].forEach(el => el.classList.add("hidden"));
+      [
+        UI.startScreen,
+        UI.howScreen,
+        UI.customScreen,
+        UI.upgradeScreen,
+        UI.endScreen,
+        UI.leaderboardScreen
+      ].forEach(el => el.classList.add("hidden"));
+
       if (screen) screen.classList.remove("hidden");
     }
 
@@ -694,10 +833,6 @@
 
     function dist(a, b) {
       return Math.hypot(a.x - b.x, a.y - b.y);
-    }
-
-    function lerp(a, b, t) {
-      return a + (b - a) * t;
     }
 
     function pick(arr) {
@@ -1441,13 +1576,10 @@
         this.gameOver = false;
         UI.hud.classList.remove("hidden");
         showScreen(null);
-
-        if (this.upgrades.startShield > 0) this.shield = 1;
       }
 
       update() {
         this.forge.update();
-
         this.updateBackgroundSparks();
 
         if (!this.running || this.paused || this.gameOver) {
@@ -1456,7 +1588,6 @@
         }
 
         this.waveTimer++;
-
         this.stats.untouchedTime++;
         this.missionProgress("untouched", 1 / 60);
 
@@ -1607,10 +1738,12 @@
         for (const s of this.bgSparks) {
           s.x += s.vx;
           s.y += s.vy;
+
           if (s.y < -10) {
             s.y = innerHeight + 10;
             s.x = rand(0, innerWidth);
           }
+
           if (s.x < -10) s.x = innerWidth + 10;
           if (s.x > innerWidth + 10) s.x = -10;
         }
@@ -1640,16 +1773,20 @@
         const margin = 60;
         const x = rand(margin, innerWidth - margin);
         const y = rand(margin + 60, innerHeight - margin);
+
         if (Math.hypot(x - this.forge.x, y - this.forge.y) < this.forge.radius + 90) return;
+
         this.entities.push(new Blessing(this, x, y));
       }
 
       spawnPowerUp(x = null, y = null) {
         const types = Object.keys(PowerUp.DATA);
+
         if (x === null || y === null) {
           x = rand(50, innerWidth - 50);
           y = rand(90, innerHeight - 70);
         }
+
         this.entities.push(new PowerUp(this, x, y, pick(types)));
       }
 
@@ -1667,12 +1804,14 @@
         if (type === "hope") {
           const range = 170;
           let cleared = 0;
+
           for (const e of this.entities) {
-            if (e.type === "enemy" && dist(e, {x:this.forge.x, y:this.forge.y}) < range) {
+            if (e.type === "enemy" && dist(e, { x: this.forge.x, y: this.forge.y }) < range) {
               e.takeDamage(999, false);
               cleared++;
             }
           }
+
           this.addScore(cleared * 40);
           this.spawnRing(this.forge.x, this.forge.y, "#ffcc66", 60);
         }
@@ -1721,12 +1860,11 @@
         this.missionProgress("burst", 1);
 
         const power = this.burstPower;
-        const clearDamage = 999;
         let cleared = 0;
 
         for (const e of this.entities) {
           if (e.type === "enemy") {
-            e.takeDamage(clearDamage, false);
+            e.takeDamage(999, false);
             cleared++;
           }
         }
@@ -1817,12 +1955,14 @@
             <div class="choiceTitle">${u.name}</div>
             <div class="choiceDesc">${u.desc}</div>
           `;
+
           card.addEventListener("click", () => {
             u.apply();
             this.paused = false;
             showScreen(null);
             this.floatingTexts.push(new FloatingText(innerWidth / 2, 125, u.name, "#ffcc66"));
           });
+
           UI.upgradeGrid.appendChild(card);
         });
 
@@ -1875,6 +2015,7 @@
         for (let i = 0; i < count; i++) {
           const a = i / count * Math.PI * 2;
           const sp = rand(3, 7);
+
           this.particles.push(new Particle(x, y, {
             vx: Math.cos(a) * sp,
             vy: Math.sin(a) * sp,
@@ -1894,6 +2035,7 @@
           { type: "burst", goal: 1, progress: 0, text: "Use Blessing Burst" },
           { type: "boss", goal: 1, progress: 0, text: "Defeat a mini boss" }
         ];
+
         return pick(missions);
       }
 
@@ -1940,6 +2082,12 @@
         UI.finalWave.textContent = this.wave;
         UI.bestScore.textContent = save.bestScore.toLocaleString();
         UI.realChallenge.textContent = pick(REAL_CHALLENGES);
+
+        UI.submitScoreBtn.disabled = false;
+        UI.submitScoreStatus.textContent = "";
+        UI.playerNameInput.value = localStorage.getItem("forgeDefenderPlayerName") || "";
+
+        refreshLeaderboard(UI.leaderboardList);
 
         showScreen(UI.endScreen);
       }
@@ -1992,6 +2140,50 @@
       });
     }
 
+    async function refreshLeaderboard(targetElement) {
+      if (!targetElement) return;
+
+      if (!window.ForgeLeaderboard) {
+        targetElement.innerHTML = `<p class="smallText">Leaderboard is not connected yet.</p>`;
+        return;
+      }
+
+      targetElement.innerHTML = `<p class="smallText">Loading leaderboard...</p>`;
+
+      try {
+        const scores = await window.ForgeLeaderboard.getTopScores();
+
+        if (!scores.length) {
+          targetElement.innerHTML = `<p class="smallText">No scores yet. Be the first Forge Defender!</p>`;
+          return;
+        }
+
+        targetElement.innerHTML = scores.map((entry, index) => `
+          <div class="leaderRow">
+            <div>
+              <strong style="color:#ffcc66;">#${index + 1}</strong>
+              <span class="leaderName">${escapeHTML(entry.name || "Anonymous")}</span>
+              <span class="leaderWave">Wave ${entry.wave || 1}</span>
+            </div>
+            <strong>${Number(entry.score || 0).toLocaleString()}</strong>
+          </div>
+        `).join("");
+      } catch (err) {
+        console.error(err);
+        targetElement.innerHTML = `<p class="smallText">Could not load leaderboard right now.</p>`;
+      }
+    }
+
+    function escapeHTML(str) {
+      return String(str).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
     function jaggedCircle(ctx, radius, points) {
       for (let i = 0; i <= points; i++) {
         const a = i / points * Math.PI * 2;
@@ -2032,7 +2224,6 @@
       ctx.stroke();
     }
 
-    // Browser support helper for older Safari.
     if (!CanvasRenderingContext2D.prototype.roundRect) {
       CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
         r = Math.min(r, w / 2, h / 2);
@@ -2093,12 +2284,41 @@
     UI.customBackBtn.addEventListener("click", () => showScreen(UI.startScreen));
     UI.menuBtn.addEventListener("click", () => showScreen(UI.startScreen));
 
-    document.querySelectorAll(".tabButton").forEach(btn => {
-      btn.addEventListener("click", () => renderCustomization(btn.dataset.tab));
+    UI.leaderboardBtn.addEventListener("click", () => {
+      showScreen(UI.leaderboardScreen);
+      refreshLeaderboard(UI.mainLeaderboardList);
+    });
+
+    UI.leaderboardBackBtn.addEventListener("click", () => showScreen(UI.startScreen));
+    UI.leaderboardRefreshBtn.addEventListener("click", () => refreshLeaderboard(UI.mainLeaderboardList));
+
+    UI.submitScoreBtn.addEventListener("click", async () => {
+      if (!window.ForgeLeaderboard) {
+        UI.submitScoreStatus.textContent = "Leaderboard is not connected yet.";
+        return;
+      }
+
+      const name = UI.playerNameInput.value.trim();
+
+      localStorage.setItem("forgeDefenderPlayerName", name || "Anonymous");
+
+      UI.submitScoreBtn.disabled = true;
+      UI.submitScoreStatus.textContent = "Submitting score...";
+
+      try {
+        await window.ForgeLeaderboard.submitScore(name, game.score, game.wave);
+        UI.submitScoreStatus.textContent = "Score submitted!";
+        await refreshLeaderboard(UI.leaderboardList);
+      } catch (err) {
+        console.error(err);
+        UI.submitScoreStatus.textContent = "Could not submit score right now.";
+        UI.submitScoreBtn.disabled = false;
+      }
     });
 
     UI.shareBtn.addEventListener("click", async () => {
       const text = `I scored ${Math.floor(game.score).toLocaleString()} in Forge Defender and reached Wave ${game.wave}!`;
+
       if (navigator.share) {
         try {
           await navigator.share({
@@ -2117,7 +2337,10 @@
       }
     });
 
-    // Initial unlock refresh.
+    document.querySelectorAll(".tabButton").forEach(btn => {
+      btn.addEventListener("click", () => renderCustomization(btn.dataset.tab));
+    });
+
     unlockProgress();
     saveGame();
   </script>
